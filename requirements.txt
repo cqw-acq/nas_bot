@@ -3,6 +3,9 @@
 # 核心依赖 - HTTP请求
 requests>=2.25.0
 
+# 主要依赖 - Flask Web框架
+flask>=2.3.0
+
 # 可选依赖 - WebSocket服务器
 websockets>=10.0
 
@@ -12,8 +15,7 @@ simplejson>=3.17.0
 # 可选依赖 - 异步HTTP服务器
 aiohttp>=3.8.0
 
-# 可选依赖 - Web框架
-flask>=2.0.0
+# 可选依赖 - 其他Web框架
 fastapi>=0.68.0
 uvicorn>=0.15.0
 

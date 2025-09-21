@@ -1,170 +1,159 @@
-# 监听8080端口的Python服务器
+# NAS Bot - OneBot 11 Flask服务器集合
 
-这个项目包含了三种不同类型的服务器，都监听8080端口来接收消息：
+这是一个基于Flask框架的OneBot 11协议服务器集合，用于接收和处理NapCat推送的QQ消息。
 
-## 1. HTTP服务器 (http_server.py)
+## 📁 文件说明
 
-基于HTTP协议的服务器，适合处理REST API请求。
+### 🚀 Flask服务器 (推荐使用)
 
-### 功能特性：
-- 支持GET和POST请求
-- 自动解析JSON和文本消息
-- 支持CORS跨域请求
-- 提供详细的请求日志
+- **`flask_onebot_server.py`** - 完整的OneBot 11 HTTP服务器
+  - 支持完整的消息处理和自动回复
+  - 包含配置管理和API集成
+  - 支持命令处理和关键词响应
 
-### 启动服务器：
+- **`flask_message_handler.py`** - 简化的消息处理器
+  - 专注于用户消息内容和发送者信息
+  - 支持基础命令和关键词回复
+  - 轻量级实现
+
+- **`flask_message_viewer.py`** - 消息查看器
+  - 只显示消息，不自动回复
+  - 适合消息监控和调试
+
+- **`flask_json_capture.py`** - 原始请求捕获器
+  - 捕获并保存NapCat的原始请求
+  - 支持API查看已保存的请求
+  - 用于调试和分析
+
+### 📚 原始实现 (仅供参考)
+
+- `onebot_server.py` - 原始HTTP服务器实现
+- `message_handler.py` - 简化消息处理器
+- `message_viewer.py` - 消息查看器
+- `napcat_json_capture.py` - JSON捕获器
+
+## 🛠️ 安装和使用
+
+### 1. 安装依赖
+
 ```bash
-python http_server.py
+pip install -r requirements.txt
 ```
 
-### 测试示例：
+### 2. 配置NapCat
+
+在NapCat中设置HTTP回调地址：
+```
+http://your-server:8080/
+```
+
+### 3. 运行服务器
+
+选择一个Flask服务器运行：
+
 ```bash
-# GET请求测试
-curl "http://localhost:8080/test?param1=value1&param2=value2"
+# 完整服务器
+python flask_onebot_server.py
 
-# POST JSON消息测试
-curl -X POST http://localhost:8080/message \
-     -H "Content-Type: application/json" \
-     -d '{"type": "test", "message": "Hello Server", "data": {"key": "value"}}'
+# 简化处理器
+python flask_message_handler.py
 
-# POST文本消息测试
-curl -X POST http://localhost:8080/message \
-     -H "Content-Type: text/plain" \
-     -d "这是一条文本消息"
+# 消息查看器
+python flask_message_viewer.py
+
+# 请求捕获器
+python flask_json_capture.py
 ```
 
-## 2. TCP服务器 (tcp_server.py)
+## ⚙️ 配置
 
-基于TCP协议的服务器，适合处理原始TCP连接和消息。
+### onebot_config.json (flask_onebot_server.py使用)
 
-### 功能特性：
-- 支持多客户端并发连接
-- 自动解析JSON和文本消息
-- 提供实时消息处理
-- 包含测试客户端
-
-### 启动服务器：
-```bash
-python tcp_server.py
-```
-
-### 运行测试客户端：
-```bash
-python tcp_server.py client
-```
-
-### 使用telnet测试：
-```bash
-telnet localhost 8080
-# 然后输入消息，如：
-# Hello TCP Server!
-# {"type": "test", "message": "JSON消息"}
-```
-
-## 3. WebSocket服务器 (websocket_server.py)
-
-基于WebSocket协议的服务器，适合实时双向通信。
-
-### 功能特性：
-- 支持实时双向通信
-- 消息广播功能
-- 自动解析JSON和文本消息
-- 客户端管理
-
-### 安装依赖：
-```bash
-pip install websockets
-```
-
-### 启动服务器：
-```bash
-python websocket_server.py
-```
-
-### 运行测试客户端：
-```bash
-python websocket_server.py client
-```
-
-### 在浏览器中测试：
-打开浏览器控制台，运行以下JavaScript代码：
-```javascript
-// 连接WebSocket
-const ws = new WebSocket('ws://localhost:8080');
-
-ws.onopen = function() {
-    console.log('WebSocket连接成功');
-    
-    // 发送消息
-    ws.send(JSON.stringify({
-        type: 'echo',
-        message: '这是一条测试消息'
-    }));
-};
-
-ws.onmessage = function(event) {
-    console.log('收到消息:', JSON.parse(event.data));
-};
-
-// 广播消息示例
-ws.send(JSON.stringify({
-    type: 'broadcast',
-    message: '这条消息将广播给所有客户端'
-}));
-```
-
-## 服务器选择建议：
-
-1. **HTTP服务器**: 
-   - 适合REST API、Web服务
-   - 无状态请求-响应模式
-   - 易于测试和调试
-
-2. **TCP服务器**: 
-   - 适合自定义协议
-   - 需要持久连接
-   - 高性能要求
-
-3. **WebSocket服务器**: 
-   - 适合实时应用
-   - 需要双向通信
-   - Web浏览器兼容性好
-
-## 消息格式示例：
-
-### JSON消息格式：
 ```json
 {
-    "type": "message_type",
-    "message": "消息内容",
-    "data": {
-        "key": "value",
-        "timestamp": "2025-01-01T12:00:00"
-    }
+  "napcat": {
+    "host": "localhost",
+    "port": 3000,
+    "token": "your-token"
+  },
+  "bot": {
+    "name": "NAS Bot",
+    "auto_reply": true,
+    "command_prefix": "/",
+    "admin_users": []
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "debug": false
+  }
 }
 ```
 
-### 服务器响应格式：
-```json
-{
-    "status": "success",
-    "message": "消息已接收",
-    "received_data": {...},
-    "timestamp": "2025-01-01T12:00:00"
-}
-```
+## 📊 API端点
 
-## 常见问题：
+### 通用端点
 
-1. **端口被占用**：
-   - 检查是否有其他程序使用8080端口
-   - 使用 `lsof -i :8080` 查看端口使用情况
-   - 可以修改代码中的端口号
+- `POST /` - 接收OneBot消息推送
+- `GET /status` - 获取服务器状态
 
-2. **防火墙问题**：
-   - 确保防火墙允许8080端口访问
-   - 本地测试建议临时关闭防火墙
+### flask_json_capture.py 特有端点
 
-3. **依赖问题**：
-   - WebSocket服务器需要安装websockets库
-   - HTTP和TCP服务器使用Python标准库，无需额外安装
+- `GET /files` - 列出已捕获的文件
+- `GET /files/<filename>` - 获取指定文件内容
+
+## 🔧 功能特性
+
+### 消息处理
+- ✅ 私聊和群聊消息处理
+- ✅ 发送者信息提取
+- ✅ 消息内容解析
+- ✅ 附件类型识别
+
+### 命令系统
+- ✅ `/help` - 显示帮助
+- ✅ `/time` - 显示当前时间
+- ✅ `/hello` - 打招呼
+
+### 关键词响应
+- ✅ 你好/hello - 自动问候
+- ✅ 帮助 - 显示帮助信息
+
+### 调试功能
+- ✅ 详细错误日志
+- ✅ 原始数据保存
+- ✅ JSON解析错误处理
+
+## 🚀 选择建议
+
+- **新手用户**: 使用 `flask_message_viewer.py` 先观察消息
+- **简单自动回复**: 使用 `flask_message_handler.py`
+- **完整功能**: 使用 `flask_onebot_server.py`
+- **调试分析**: 使用 `flask_json_capture.py`
+
+## 📝 注意事项
+
+1. 确保NapCat正在运行并配置了正确的回调地址
+2. 检查防火墙设置，确保8080端口可访问
+3. 在生产环境中建议修改默认端口和token
+4. 建议使用虚拟环境安装依赖
+
+## 🔍 故障排除
+
+### 常见问题
+
+1. **连接被拒绝**: 检查NapCat是否运行，端口是否正确
+2. **JSON解析错误**: 使用捕获器查看原始请求
+3. **消息不回复**: 检查token配置和API地址
+4. **权限错误**: 确保机器人有发送消息的权限
+
+### 调试步骤
+
+1. 运行 `flask_json_capture.py` 查看原始请求
+2. 检查 `/status` 端点确认服务器运行状态
+3. 查看控制台输出的错误信息
+4. 验证NapCat配置和网络连接
+
+## 📄 许可证
+
+MIT License
