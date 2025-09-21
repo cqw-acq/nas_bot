@@ -9,6 +9,7 @@ import socket
 import threading
 import json
 from datetime import datetime
+from json_utils import parse_json_with_details, log_json_error
 
 
 class TCPMessageServer:
@@ -37,22 +38,28 @@ class TCPMessageServer:
                 print(f"[{datetime.now()}] 收到来自 {client_address} 的消息: {message}")
                 
                 # 尝试解析JSON消息
-                try:
-                    json_message = json.loads(message)
+                json_message, error_details = parse_json_with_details(message)
+                
+                if json_message is not None:
+                    # JSON解析成功
                     response = {
                         'status': 'success',
                         'message': '消息已接收',
                         'received_data': json_message,
                         'timestamp': datetime.now().isoformat()
                     }
-                except json.JSONDecodeError as e:
-                    error_msg = f"JSON解析失败: {e}, 原始消息: {message}"
-                    print(f"[{datetime.now()}] {error_msg}")
+                else:
+                    # JSON解析失败
+                    log_json_error(error_details)
                     response = {
                         'status': 'json_parse_error',
                         'error': 'JSON解析失败',
-                        'details': str(e),
-                        'message': '文本消息已接收',
+                        'details': error_details['error_message'],
+                        'error_position': error_details['error_position'],
+                        'error_char': error_details['error_char'],
+                        'context': error_details['context'],
+                        'suggestions': error_details['suggestions'],
+                        'message': '收到无效JSON数据',
                         'received_data': message,
                         'timestamp': datetime.now().isoformat()
                     }

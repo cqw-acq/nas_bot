@@ -305,3 +305,36 @@
 2025-09-21 14:03:26,876 - INFO - 配置加载完成: 0.0.0.0:8080
 2025-09-21 14:03:26,877 - ERROR - 服务器启动失败: [Errno 48] Address already in use
 2025-09-21 14:03:26,877 - INFO - OneBot服务器已停止
+2025-09-21 14:06:54,421 - INFO - 配置加载完成: 0.0.0.0:8080
+2025-09-21 14:06:54,421 - INFO - OneBot 11 HTTP服务器启动成功
+2025-09-21 14:06:54,421 - INFO - 监听地址: 0.0.0.0:8080
+2025-09-21 14:06:54,421 - INFO - NapCat地址: localhost:3000
+2025-09-21 14:06:54,421 - INFO - 按 Ctrl+C 停止服务器
+2025-09-21 14:06:59,877 - ERROR - JSON解析失败: Expecting ',' delimiter: line 1 column 19 (char 18), 原始数据: {"message": "test"
+2025-09-21 14:06:59,878 - INFO - 127.0.0.1 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:06:59,880 - ERROR - JSON解析失败: Expecting property name enclosed in double quotes: line 1 column 20 (char 19), 原始数据: {"message": "test",}
+2025-09-21 14:06:59,880 - INFO - 127.0.0.1 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:06:59,882 - ERROR - JSON解析失败: Expecting value: line 1 column 1 (char 0), 原始数据: this is not json
+2025-09-21 14:06:59,882 - INFO - 127.0.0.1 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:06:59,885 - ERROR - JSON解析失败: Expecting value: line 1 column 1 (char 0), 原始数据: 
+2025-09-21 14:06:59,885 - INFO - 127.0.0.1 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:06:59,887 - ERROR - JSON解析失败: Extra data: line 1 column 4 (char 3), 原始数据: 123{"test": "value"}
+2025-09-21 14:06:59,887 - INFO - 127.0.0.1 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:06:59,889 - ERROR - JSON解析失败: Invalid control character at: line 1 column 18 (char 17), 原始数据: {"message": "test "}
+2025-09-21 14:06:59,889 - INFO - 127.0.0.1 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:08:04,447 - INFO - 服务器正在停止...
+2025-09-21 14:08:04,455 - INFO - OneBot服务器已停止
+2025-09-21 14:14:58,535 - INFO - 配置加载完成: 0.0.0.0:8080
+2025-09-21 14:14:58,536 - INFO - OneBot 11 HTTP服务器启动成功
+2025-09-21 14:14:58,536 - INFO - 监听地址: 0.0.0.0:8080
+2025-09-21 14:14:58,536 - INFO - NapCat地址: localhost:3000
+2025-09-21 14:14:58,536 - INFO - 按 Ctrl+C 停止服务器
+2025-09-21 14:15:05,269 - ERROR - JSON解析失败: Expecting value: line 1 column 1 (char 0)
+2025-09-21 14:15:05,269 - ERROR - 错误位置: 0 (line 1 column 1)
+2025-09-21 14:15:05,270 - ERROR - 错误字符: EOF (EOF)
+2025-09-21 14:15:05,270 - ERROR - 上下文: ''
+2025-09-21 14:15:05,270 - ERROR - 十六进制: 
+2025-09-21 14:15:05,270 - ERROR - 数据长度: 0
+2025-09-21 14:15:05,270 - INFO - 192.168.1.83 - "POST / HTTP/1.1" 400 -
+2025-09-21 14:15:37,845 - INFO - 服务器正在停止...
+2025-09-21 14:15:37,848 - INFO - OneBot服务器已停止

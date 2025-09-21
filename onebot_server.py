@@ -18,6 +18,7 @@ import urllib.parse
 import requests
 from threading import Thread
 import queue
+from json_utils import safe_parse_json, log_json_error
 
 
 # 配置日志
@@ -313,21 +314,14 @@ class OneBotHTTPHandler(http.server.BaseHTTPRequestHandler):
                     return
             
             # 解析JSON数据
-            try:
-                event_data = json.loads(post_data.decode('utf-8'))
-            except json.JSONDecodeError as e:
-                error_msg = f"JSON解析失败: {e}, 原始数据: {post_data.decode('utf-8', errors='replace')}"
-                logger.error(error_msg)
+            event_data, error_response = safe_parse_json(post_data)
+            
+            if error_response:
+                # JSON解析失败
                 self.send_response(400)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 
-                error_response = {
-                    'status': 'failed',
-                    'error': 'JSON解析失败',
-                    'details': str(e),
-                    'raw_data': post_data.decode('utf-8', errors='replace')
-                }
                 response_data = json.dumps(error_response, ensure_ascii=False)
                 self.wfile.write(response_data.encode('utf-8'))
                 return

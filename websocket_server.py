@@ -10,6 +10,7 @@ import asyncio
 import websockets
 import json
 from datetime import datetime
+from json_utils import parse_json_with_details, log_json_error
 
 
 class WebSocketMessageServer:
@@ -41,9 +42,10 @@ class WebSocketMessageServer:
     
     async def handle_message(self, websocket, message):
         """处理收到的消息"""
-        try:
-            # 尝试解析JSON消息
-            data = json.loads(message)
+        data, error_details = parse_json_with_details(message)
+        
+        if data is not None:
+            # JSON解析成功
             print(f"[{datetime.now()}] 收到JSON消息: {data}")
             
             # 根据消息类型处理
@@ -78,16 +80,18 @@ class WebSocketMessageServer:
                     'received_data': data,
                     'timestamp': datetime.now().isoformat()
                 }
-            
-        except json.JSONDecodeError as e:
-            # 处理非JSON消息，包含详细的解析错误信息
-            error_msg = f"JSON解析失败: {e}, 原始消息: {message}"
-            print(f"[{datetime.now()}] {error_msg}")
+        else:
+            # JSON解析失败
+            log_json_error(error_details)
             response = {
                 'type': 'json_parse_error',
                 'error': 'JSON解析失败',
-                'details': str(e),
-                'message': '收到非JSON格式的消息',
+                'details': error_details['error_message'],
+                'error_position': error_details['error_position'],
+                'error_char': error_details['error_char'],
+                'context': error_details['context'],
+                'suggestions': error_details['suggestions'],
+                'message': '收到无效JSON格式的消息',
                 'received_data': message,
                 'timestamp': datetime.now().isoformat()
             }
