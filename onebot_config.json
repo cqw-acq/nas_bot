@@ -1,0 +1,18 @@
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "napcat_host": "localhost",
+  "napcat_port": 3000,
+  "napcat_token": "1145",
+  "secret": "",
+  "access_token": "",
+  "enable_heartbeat": true,
+  "heartbeat_interval": 5000,
+  "enable_message_log": true,
+  "enable_auto_reply": true,
+  "auto_reply_keywords": {
+    "你好": "你好！有什么可以帮助你的吗？",
+    "帮助": "可用命令:\n/help - 显示帮助\n/time - 显示当前时间\n/ping - 测试连接",
+    "ping": "pong! 机器人在线"
+  }
+}

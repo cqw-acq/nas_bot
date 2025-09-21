@@ -1,0 +1,23 @@
+# OneBot 11 HTTP服务端依赖
+
+# 核心依赖 - HTTP请求
+requests>=2.25.0
+
+# 可选依赖 - WebSocket服务器
+websockets>=10.0
+
+# 可选依赖 - 更好的JSON处理
+simplejson>=3.17.0
+
+# 可选依赖 - 异步HTTP服务器
+aiohttp>=3.8.0
+
+# 可选依赖 - Web框架
+flask>=2.0.0
+fastapi>=0.68.0
+uvicorn>=0.15.0
+
+# 开发依赖 - 测试和格式化
+pytest>=6.0.0
+black>=21.0.0
+flake8>=3.9.0
