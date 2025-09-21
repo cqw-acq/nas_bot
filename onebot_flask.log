@@ -1,0 +1,39 @@
+2025-09-21 14:36:52,076 - INFO - OneBot 11 Flask服务器启动
+2025-09-21 14:36:52,077 - INFO - 监听地址: 0.0.0.0:8080
+2025-09-21 14:36:52,077 - INFO - NapCat地址: localhost:3000
+2025-09-21 14:36:52,089 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.1.83:8080
+2025-09-21 14:36:52,089 - INFO - [33mPress CTRL+C to quit[0m
+2025-09-21 14:37:07,272 - INFO - 收到private消息 - 用户:JRY(3771203015) 内容:last fucking try
+2025-09-21 14:37:07,273 - INFO - 192.168.1.83 - - [21/Sep/2025 14:37:07] "POST / HTTP/1.1" 200 -
+2025-09-21 14:37:38,667 - INFO - OneBot 11 Flask服务器启动
+2025-09-21 14:37:38,667 - INFO - 监听地址: 0.0.0.0:8080
+2025-09-21 14:37:38,667 - INFO - NapCat地址: localhost:3000
+2025-09-21 14:37:38,680 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.1.83:8080
+2025-09-21 14:37:38,680 - INFO - [33mPress CTRL+C to quit[0m
+2025-09-21 14:37:44,864 - INFO - 收到private消息 - 用户:JRY(3771203015) 内容:你好
+2025-09-21 14:37:44,880 - ERROR - API调用失败: 403 - {"message":"token verify failed!"}
+2025-09-21 14:37:44,880 - INFO - 192.168.1.83 - - [21/Sep/2025 14:37:44] "POST / HTTP/1.1" 200 -
+2025-09-21 14:37:47,227 - INFO - 收到private消息 - 用户:JRY(3771203015) 内容:hellp
+2025-09-21 14:37:47,227 - INFO - 192.168.1.83 - - [21/Sep/2025 14:37:47] "POST / HTTP/1.1" 200 -
+2025-09-21 14:37:51,080 - INFO - 收到private消息 - 用户:JRY(3771203015) 内容:/hello
+2025-09-21 14:37:51,081 - INFO - 192.168.1.83 - - [21/Sep/2025 14:37:51] "POST / HTTP/1.1" 200 -
+2025-09-21 14:37:57,113 - INFO - 收到private消息 - 用户:JRY(3771203015) 内容:/help
+2025-09-21 14:37:57,120 - ERROR - API调用失败: 403 - {"message":"token verify failed!"}
+2025-09-21 14:37:57,120 - INFO - 192.168.1.83 - - [21/Sep/2025 14:37:57] "POST / HTTP/1.1" 200 -
+2025-09-21 14:38:32,128 - INFO - OneBot 11 Flask服务器启动
+2025-09-21 14:38:32,129 - INFO - 监听地址: 0.0.0.0:8080
+2025-09-21 14:38:32,129 - INFO - NapCat地址: localhost:3000
+2025-09-21 14:38:32,141 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.1.83:8080
+2025-09-21 14:38:32,141 - INFO - [33mPress CTRL+C to quit[0m
+2025-09-21 14:38:45,208 - INFO - 收到private消息 - 用户:JRY(3771203015) 内容:/time
+2025-09-21 14:38:45,226 - ERROR - API调用失败: 403 - {"message":"token verify failed!"}
+2025-09-21 14:38:45,226 - INFO - 192.168.1.83 - - [21/Sep/2025 14:38:45] "POST / HTTP/1.1" 200 -

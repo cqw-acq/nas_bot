@@ -1,10 +1,12 @@
-# OneBot 11 HTTP服务端依赖
+# NAS Bot 聊天机器人依赖
 
-# 核心依赖 - HTTP请求
+# 核心依赖
 requests>=2.25.0
-
-# 主要依赖 - Flask Web框架
 flask>=2.3.0
+pyyaml>=6.0
+
+# Web服务器相关
+gunicorn>=20.1.0
 
 # 可选依赖 - WebSocket服务器
 websockets>=10.0

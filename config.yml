@@ -1,0 +1,155 @@
+# NAS Bot 配置文件
+# OneBot 11 Flask 服务器配置
+
+# NapCat API 配置
+napcat:
+  host: localhost
+  port: 3000
+  token: "5Z?Rm$@2JwDFS:Ut"
+  api_base: "http://localhost:3000"
+  timeout: 10
+
+# 机器人基础配置
+bot:
+  name: "NAS Bot"
+  nickname: "小助手"
+  auto_reply: true
+  command_prefix: "/"
+  admin_users: []  # 管理员QQ号列表
+  enabled_groups: []  # 启用的群组，空列表表示所有群组
+  
+# 服务器配置
+server:
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
+  threaded: true
+
+# 聊天功能配置
+chat:
+  # 智能对话
+  smart_reply:
+    enabled: true
+    confidence_threshold: 0.7
+    
+  # 情感响应
+  emotion:
+    enabled: true
+    positive_words: ["开心", "高兴", "快乐", "棒", "赞", "好的", "谢谢"]
+    negative_words: ["难过", "伤心", "不开心", "烦", "累", "不好", "糟糕"]
+    
+  # 关键词回复
+  keywords:
+    greetings: ["你好", "hi", "hello", "嗨"]
+    goodbye: ["再见", "拜拜", "bye"]
+    thanks: ["谢谢", "感谢", "thx", "thanks"]
+    
+# 命令配置
+commands:
+  # 基础命令
+  basic:
+    help: true
+    time: true
+    echo: true
+    ping: true
+    
+  # 工具命令
+  tools:
+    calculator: true
+    weather: false  # 需要API key
+    translate: false  # 需要API key
+    
+  # 娱乐命令
+  entertainment:
+    joke: true
+    fortune: true
+    dice: true
+    coinflip: true
+    
+# 游戏配置
+games:
+  # 猜数字游戏
+  guess_number:
+    enabled: true
+    max_attempts: 6
+    range_min: 1
+    range_max: 100
+    
+  # 石头剪刀布
+  rock_paper_scissors:
+    enabled: true
+    
+  # 抽签
+  fortune_telling:
+    enabled: true
+    fortunes:
+      - "大吉：今天是幸运的一天！"
+      - "中吉：会有小小的惊喜等着你"
+      - "小吉：保持乐观，好事将至"
+      - "吉：平稳度过美好一天"
+      - "末吉：注意细节，小心为上"
+      - "凶：今天要格外小心哦"
+
+# 群组功能配置
+group:
+  # 签到系统
+  checkin:
+    enabled: true
+    daily_points: 10
+    continuous_bonus: 5
+    
+  # 积分系统
+  points:
+    enabled: true
+    daily_message_limit: 100
+    points_per_message: 1
+    
+  # @提醒响应
+  mention_response:
+    enabled: true
+    responses:
+      - "我在呢！有什么需要帮助的吗？"
+      - "叫我干嘛～"
+      - "怎么了怎么了？"
+      - "有什么事吗？"
+
+# 外部API配置
+external_apis:
+  # 天气API (可选)
+  weather:
+    enabled: false
+    api_key: ""
+    base_url: "https://api.openweathermap.org/data/2.5"
+    
+  # 翻译API (可选)
+  translate:
+    enabled: false
+    api_key: ""
+    
+# 数据存储配置
+storage:
+  # 用户数据
+  user_data_file: "data/user_data.json"
+  # 群组数据
+  group_data_file: "data/group_data.json"
+  # 游戏数据
+  game_data_file: "data/game_data.json"
+  
+# 日志配置
+logging:
+  level: "INFO"
+  file: "logs/bot.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# 安全配置
+security:
+  # 消息频率限制
+  rate_limit:
+    enabled: true
+    max_messages_per_minute: 20
+    
+  # 敏感词过滤
+  word_filter:
+    enabled: false
+    blocked_words: []
