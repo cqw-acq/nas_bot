@@ -13,6 +13,7 @@ import re
 import math
 import os
 import time
+import glob
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 import requests
@@ -143,24 +144,132 @@ class DataManager:
         return self.group_data[group_id]
 
 
+class PromptManager:
+    """Prompt管理器"""
+    
+    def __init__(self, config: BotConfig = None):
+        self.config = config
+        if config:
+            self.prompts_dir = config.get('prompts.prompts_dir', 'prompts')
+            self.current_prompt = config.get('prompts.default_prompt', 'default')
+        else:
+            self.prompts_dir = 'prompts'
+            self.current_prompt = 'default'
+        self.ensure_prompts_dir()
+    
+    def ensure_prompts_dir(self):
+        """确保prompts目录存在"""
+        if not os.path.exists(self.prompts_dir):
+            os.makedirs(self.prompts_dir)
+            # 创建默认prompt
+            default_prompt = "你是一个友好的聊天机器人，名字叫NAS Bot。请用简洁、友好的方式回复用户。"
+            with open(os.path.join(self.prompts_dir, 'default.txt'), 'w', encoding='utf-8') as f:
+                f.write(default_prompt)
+    
+    def list_prompts(self) -> List[str]:
+        """列出所有可用的prompt"""
+        prompts = []
+        pattern = os.path.join(self.prompts_dir, '*.txt')
+        for filepath in glob.glob(pattern):
+            filename = os.path.basename(filepath)
+            prompt_name = os.path.splitext(filename)[0]
+            prompts.append(prompt_name)
+        return sorted(prompts)
+    
+    def get_prompt(self, prompt_name: str = None) -> str:
+        """获取指定prompt的内容"""
+        if prompt_name is None:
+            prompt_name = self.current_prompt
+        
+        filepath = os.path.join(self.prompts_dir, f"{prompt_name}.txt")
+        if not os.path.exists(filepath):
+            print(f"⚠️  Prompt文件不存在: {prompt_name}")
+            # 返回默认prompt
+            default_path = os.path.join(self.prompts_dir, 'default.txt')
+            if os.path.exists(default_path):
+                with open(default_path, 'r', encoding='utf-8') as f:
+                    return f.read().strip()
+            return "你是一个友好的聊天机器人。"
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return f.read().strip()
+        except Exception as e:
+            print(f"❌ 读取prompt失败: {e}")
+            return "你是一个友好的聊天机器人。"
+    
+    def set_prompt(self, prompt_name: str) -> bool:
+        """设置当前使用的prompt"""
+        filepath = os.path.join(self.prompts_dir, f"{prompt_name}.txt")
+        if os.path.exists(filepath):
+            self.current_prompt = prompt_name
+            return True
+        return False
+    
+    def get_current_prompt_name(self) -> str:
+        """获取当前prompt名称"""
+        return self.current_prompt
+    
+    def create_prompt(self, prompt_name: str, content: str) -> bool:
+        """创建新的prompt"""
+        try:
+            filepath = os.path.join(self.prompts_dir, f"{prompt_name}.txt")
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content.strip())
+            return True
+        except Exception as e:
+            print(f"❌ 创建prompt失败: {e}")
+            return False
+    
+    def delete_prompt(self, prompt_name: str) -> bool:
+        """删除prompt（不能删除default）"""
+        if prompt_name == 'default':
+            return False
+        
+        filepath = os.path.join(self.prompts_dir, f"{prompt_name}.txt")
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+                if self.current_prompt == prompt_name:
+                    self.current_prompt = 'default'
+                return True
+            except Exception as e:
+                print(f"❌ 删除prompt失败: {e}")
+        return False
+    
+    def get_prompt_info(self) -> Dict[str, Any]:
+        """获取prompt信息摘要"""
+        prompts = self.list_prompts()
+        info = {
+            'current': self.current_prompt,
+            'available': prompts,
+            'total': len(prompts)
+        }
+        return info
+
+
 class DeepSeekAPI:
     """DeepSeek API 调用器"""
     
-    def __init__(self, config: BotConfig):
+    def __init__(self, config: BotConfig, prompt_manager: PromptManager):
         self.config = config
+        self.prompt_manager = prompt_manager
         self.api_key = config.get('deepseek.api_key', '')
         self.base_url = config.get('deepseek.base_url', 'https://api.deepseek.com')
         self.model = config.get('deepseek.model', 'deepseek-chat')
         self.max_tokens = config.get('deepseek.max_tokens', 1000)
         self.temperature = config.get('deepseek.temperature', 0.7)
         self.timeout = config.get('deepseek.timeout', 30)
-        self.system_prompt = config.get('deepseek.system_prompt', 
-            '你是一个友好的聊天机器人，名字叫NAS Bot。请用简洁、友好的方式回复用户。')
         self.enabled = config.get('deepseek.enabled', False)
         
         # 聊天历史记录 (简单内存存储)
         self.chat_history: Dict[str, List[Dict[str, str]]] = {}
         self.max_history = 10  # 最多保存10轮对话
+    
+    def get_system_prompt(self) -> str:
+        """获取当前的system prompt"""
+        # 优先使用prompt_manager的当前prompt
+        return self.prompt_manager.get_prompt()
     
     def is_enabled(self) -> bool:
         """检查DeepSeek是否启用且配置正确"""
@@ -198,7 +307,7 @@ class DeepSeekAPI:
         try:
             # 构建消息列表
             messages = [
-                {"role": "system", "content": self.system_prompt}
+                {"role": "system", "content": self.get_system_prompt()}
             ]
             
             # 添加聊天历史
@@ -304,7 +413,13 @@ class CommandHandler:
 /rank - 积分排行榜
 /clear_chat - 清除AI聊天记录
 
-🤖 AI对话:
+� AI Prompt管理:
+/prompts - 查看所有可用prompt
+/prompt [名称] - 切换/查看当前prompt
+/prompt_info - 显示prompt统计信息
+/create_prompt <名称> <内容> - 创建新prompt
+
+�🤖 AI对话:
 在群聊中@机器人可以进行智能对话
 私聊直接发送消息即可
 
@@ -600,10 +715,11 @@ class ChatBot:
     def __init__(self):
         self.config = BotConfig()
         self.data_manager = DataManager(self.config)
+        self.prompt_manager = PromptManager(self.config)  # 传入配置
         self.command_handler = CommandHandler(self.config, self.data_manager)
         self.game_manager = GameManager(self.config, self.data_manager)
         self.smart_reply = SmartReply(self.config)
-        self.deepseek_api = DeepSeekAPI(self.config)  # 添加DeepSeek API
+        self.deepseek_api = DeepSeekAPI(self.config, self.prompt_manager)  # 传入prompt_manager
         
         # Flask应用
         self.app = Flask(__name__)
@@ -662,23 +778,40 @@ class ChatBot:
         user_data = self.data_manager.get_user_data(user_id)
         user_data['message_count'] += 1
         
-        # 检查是否被@，如果是则使用DeepSeek回复
-        if self.is_mentioned(data) and self.config.get('group.mention_response.use_deepseek', False):
-            clean_message = self.clean_mention_message(message)
+        # 检查是否使用DeepSeek回复
+        should_use_deepseek = False
+        clean_message = message
+        
+        if message_type == 'private':
+            # 私聊中，如果不是命令且DeepSeek启用，则使用AI回复
+            if (not message.startswith(self.config.get('bot.command_prefix', '/')) and 
+                self.deepseek_api.is_enabled()):
+                should_use_deepseek = True
+        elif message_type == 'group':
+            # 群聊中，检查是否被@
+            if (self.is_mentioned(data) and 
+                self.config.get('group.mention_response.use_deepseek', False)):
+                should_use_deepseek = True
+                clean_message = self.clean_mention_message(message)
+        
+        if should_use_deepseek:
+            print(f"🤖 使用DeepSeek处理消息: {clean_message}")
             deepseek_response = self.deepseek_api.chat(user_id, clean_message, nickname)
             if deepseek_response:
-                print(f"🤖 DeepSeek回复: {deepseek_response}")
+                print(f"✅ DeepSeek回复: {deepseek_response}")
                 self.send_reply(deepseek_response, user_id, group_id, message_type)
                 self.data_manager.save_data()
                 return
             else:
+                print(f"❌ DeepSeek回复失败，使用备用回复")
                 # DeepSeek失败时使用备用回复
-                fallback_responses = self.config.get('group.mention_response.fallback_responses', [])
-                if fallback_responses:
-                    response = random.choice(fallback_responses)
-                    self.send_reply(response, user_id, group_id, message_type)
-                    self.data_manager.save_data()
-                    return
+                if message_type == 'group':
+                    fallback_responses = self.config.get('group.mention_response.fallback_responses', [])
+                    if fallback_responses:
+                        response = random.choice(fallback_responses)
+                        self.send_reply(response, user_id, group_id, message_type)
+                        self.data_manager.save_data()
+                        return
         
         # 处理游戏输入
         game_response = self.game_manager.handle_guess_input(user_id, message)
@@ -751,6 +884,22 @@ class ChatBot:
         elif command == 'clear_chat':
             return self.handle_clear_chat(user_id)
         
+        # Prompt管理命令
+        elif command == 'prompts':
+            return self.handle_list_prompts()
+        elif command == 'prompt':
+            if not args:
+                return self.handle_current_prompt()
+            return self.handle_set_prompt(args[0])
+        elif command == 'prompt_info':
+            return self.handle_prompt_info()
+        elif command == 'create_prompt':
+            if len(args) < 2:
+                return "❌ 用法: /create_prompt <名称> <内容>"
+            prompt_name = args[0]
+            content = ' '.join(args[1:])
+            return self.handle_create_prompt(prompt_name, content)
+        
         return f"❓ 未知命令: {command}\n发送 /help 查看所有可用命令"
     
     def handle_clear_chat(self, user_id: str) -> str:
@@ -760,6 +909,64 @@ class ChatBot:
             return "🧹 AI聊天记录已清除，开始新的对话吧！"
         else:
             return "⚠️ DeepSeek AI功能未启用"
+    
+    def handle_list_prompts(self) -> str:
+        """列出所有可用的prompt"""
+        prompts = self.prompt_manager.list_prompts()
+        current = self.prompt_manager.get_current_prompt_name()
+        
+        if not prompts:
+            return "📝 当前没有可用的prompt"
+        
+        result = "📝 可用的Prompt列表:\n\n"
+        for prompt_name in prompts:
+            marker = "🔴" if prompt_name == current else "⚪"
+            result += f"{marker} {prompt_name}\n"
+        
+        result += f"\n当前使用: {current}\n"
+        result += "💡 使用 /prompt <名称> 切换prompt"
+        return result
+    
+    def handle_current_prompt(self) -> str:
+        """显示当前prompt信息"""
+        current = self.prompt_manager.get_current_prompt_name()
+        content = self.prompt_manager.get_prompt()
+        
+        result = f"📝 当前Prompt: {current}\n\n"
+        result += f"内容:\n{content}\n\n"
+        result += "💡 使用 /prompts 查看所有可用prompt"
+        return result
+    
+    def handle_set_prompt(self, prompt_name: str) -> str:
+        """设置当前prompt"""
+        if self.prompt_manager.set_prompt(prompt_name):
+            # 清除所有用户的聊天历史，因为prompt已改变
+            if self.deepseek_api.is_enabled():
+                self.deepseek_api.chat_history.clear()
+            return f"✅ 已切换到prompt: {prompt_name}\n🧹 所有聊天记录已清除"
+        else:
+            available = ", ".join(self.prompt_manager.list_prompts())
+            return f"❌ Prompt '{prompt_name}' 不存在\n可用的prompt: {available}"
+    
+    def handle_prompt_info(self) -> str:
+        """显示prompt统计信息"""
+        info = self.prompt_manager.get_prompt_info()
+        result = "📊 Prompt信息:\n\n"
+        result += f"当前使用: {info['current']}\n"
+        result += f"总数量: {info['total']}\n"
+        result += f"可用列表: {', '.join(info['available'])}\n\n"
+        result += "💡 使用命令:\n"
+        result += "• /prompts - 查看所有prompt\n"
+        result += "• /prompt <名称> - 切换prompt\n"
+        result += "• /create_prompt <名称> <内容> - 创建新prompt"
+        return result
+    
+    def handle_create_prompt(self, prompt_name: str, content: str) -> str:
+        """创建新的prompt"""
+        if self.prompt_manager.create_prompt(prompt_name, content):
+            return f"✅ 成功创建prompt: {prompt_name}\n💡 使用 /prompt {prompt_name} 切换到新prompt"
+        else:
+            return f"❌ 创建prompt失败: {prompt_name}"
     
     def get_smart_response(self, message: str, user_id: str) -> Optional[str]:
         """获取智能回复"""
@@ -805,12 +1012,18 @@ class ChatBot:
         if isinstance(message_data, list):
             for item in message_data:
                 if isinstance(item, dict) and item.get('type') == 'at':
-                    # 这里应该检查是否@的是机器人自己
-                    # 由于我们不知道机器人的QQ号，先简化为有@就响应
-                    return True
+                    # 获取被@的QQ号
+                    at_qq = item.get('data', {}).get('qq', '')
+                    # 如果@的是all或者包含@符号，认为是@机器人
+                    if at_qq == 'all' or at_qq:
+                        return True
         
-        # 也可以通过原始消息检查@符号
+        # 通过原始消息检查@符号 - 更宽松的检测
         raw_message = data.get('raw_message', '')
+        # 检查是否包含@相关的CQ码
+        if '[CQ:at' in raw_message:
+            return True
+        # 检查是否直接包含@符号
         if '@' in raw_message:
             return True
             
@@ -818,12 +1031,18 @@ class ChatBot:
     
     def clean_mention_message(self, message: str) -> str:
         """清理消息中的@信息，提取纯文本"""
-        # 移除CQ码格式的@信息
         import re
         # 移除 [CQ:at,qq=xxxxx] 格式
-        cleaned = re.sub(r'\[CQ:at,qq=\d+\]', '', message)
-        # 移除多余的空格
+        cleaned = re.sub(r'\[CQ:at,qq=[^\]]+\]', '', message)
+        # 移除普通的@用户名格式
+        cleaned = re.sub(r'@\w+\s*', '', cleaned)
+        # 移除多余的空格和换行
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        
+        # 如果清理后消息为空，返回一个默认提示
+        if not cleaned:
+            cleaned = "你好"
+            
         return cleaned
     
     def send_reply(self, message: str, user_id: str, group_id: Optional[str], message_type: str):
@@ -863,6 +1082,13 @@ class ChatBot:
         print(f"🔧 配置文件: {self.config.config_file}")
         print(f"📡 监听端口: {self.config.get('server.port')}")
         print(f"🔗 NapCat: {self.config.get('napcat.host')}:{self.config.get('napcat.port')}")
+        
+        # 显示DeepSeek状态
+        if self.deepseek_api.is_enabled():
+            print(f"🧠 DeepSeek AI: ✅ 已启用 ({self.deepseek_api.model})")
+        else:
+            print(f"🧠 DeepSeek AI: ❌ 未启用")
+            
         print("=" * 50)
         print("🎮 支持功能:")
         print("   • 智能对话和情感响应")
@@ -870,6 +1096,8 @@ class ChatBot:
         print("   • 游戏娱乐功能")
         print("   • 群组互动系统")
         print("   • 积分和签到系统")
+        if self.deepseek_api.is_enabled():
+            print("   • AI智能对话 (DeepSeek)")
         print("=" * 50)
         print("✅ 服务器运行中...")
         

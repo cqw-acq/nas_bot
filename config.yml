@@ -12,13 +12,17 @@ napcat:
 # DeepSeek API 配置
 deepseek:
   enabled: true
-  api_key: "sk-your-deepseek-api-key-here"  # 请填入你的DeepSeek API密钥
-  base_url: "https://api.deepseek.com"
+  api_key: "sk-1d59a7db865540409277b10ade4d1cb9"  # 请填入你的DeepSeek API密钥
+  base_url: "https://api.deepseek.com/v1"
   model: "deepseek-chat"
   max_tokens: 1000
   temperature: 0.7
-  system_prompt: "你是一个友好的聊天机器人，名字叫NAS Bot。请用简洁、友好的方式回复用户。"
   timeout: 30
+
+# Prompt管理配置
+prompts:
+  default_prompt: "default"  # 默认使用的prompt名称
+  prompts_dir: "prompts"     # prompt文件存储目录
 
 # 机器人基础配置
 bot:
