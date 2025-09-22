@@ -12,7 +12,7 @@ napcat:
 # DeepSeek API 配置
 deepseek:
   enabled: true
-  api_key: "sk-1d59a7db865540409277b10ade4d1cb9"  # 请填入你的DeepSeek API密钥
+  api_key: ""  # 请填入你的DeepSeek API密钥
   base_url: "https://api.deepseek.com/v1"
   model: "deepseek-chat"
   max_tokens: 1000
