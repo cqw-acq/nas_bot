@@ -81,6 +81,18 @@ napcat:
   host: "localhost"
   port: 3000
   token: "5Z?Rm$@2JwDFS:Ut"
+
+# DeepSeek AI 配置 (可选)
+deepseek:
+  enabled: true
+  api_key: "sk-your-deepseek-api-key-here"  # 请填入你的API密钥
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-chat"
+
+# 启用@机器人时的AI回复
+group:
+  mention_response:
+    use_deepseek: true
 ```
 
 ### 3. 运行机器人

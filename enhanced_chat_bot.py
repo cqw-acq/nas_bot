@@ -3,7 +3,7 @@
 """
 增强版聊天机器人服务器
 支持智能对话、游戏、群组互动等功能
-基于Flask和YAML配置
+基于Flask和YAML配置，集成DeepSeek AI
 """
 
 import json
@@ -12,6 +12,7 @@ import random
 import re
 import math
 import os
+import time
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify
 import requests
@@ -142,6 +143,122 @@ class DataManager:
         return self.group_data[group_id]
 
 
+class DeepSeekAPI:
+    """DeepSeek API 调用器"""
+    
+    def __init__(self, config: BotConfig):
+        self.config = config
+        self.api_key = config.get('deepseek.api_key', '')
+        self.base_url = config.get('deepseek.base_url', 'https://api.deepseek.com')
+        self.model = config.get('deepseek.model', 'deepseek-chat')
+        self.max_tokens = config.get('deepseek.max_tokens', 1000)
+        self.temperature = config.get('deepseek.temperature', 0.7)
+        self.timeout = config.get('deepseek.timeout', 30)
+        self.system_prompt = config.get('deepseek.system_prompt', 
+            '你是一个友好的聊天机器人，名字叫NAS Bot。请用简洁、友好的方式回复用户。')
+        self.enabled = config.get('deepseek.enabled', False)
+        
+        # 聊天历史记录 (简单内存存储)
+        self.chat_history: Dict[str, List[Dict[str, str]]] = {}
+        self.max_history = 10  # 最多保存10轮对话
+    
+    def is_enabled(self) -> bool:
+        """检查DeepSeek是否启用且配置正确"""
+        return (self.enabled and 
+                self.api_key and 
+                self.api_key != 'sk-your-deepseek-api-key-here')
+    
+    def get_chat_history(self, user_id: str) -> List[Dict[str, str]]:
+        """获取用户聊天历史"""
+        return self.chat_history.get(user_id, [])
+    
+    def add_to_history(self, user_id: str, user_message: str, assistant_message: str):
+        """添加对话到历史记录"""
+        if user_id not in self.chat_history:
+            self.chat_history[user_id] = []
+        
+        history = self.chat_history[user_id]
+        history.append({"role": "user", "content": user_message})
+        history.append({"role": "assistant", "content": assistant_message})
+        
+        # 保持历史记录长度限制
+        if len(history) > self.max_history * 2:
+            self.chat_history[user_id] = history[-self.max_history * 2:]
+    
+    def clear_history(self, user_id: str):
+        """清除用户聊天历史"""
+        if user_id in self.chat_history:
+            del self.chat_history[user_id]
+    
+    def chat(self, user_id: str, message: str, nickname: str = "") -> Optional[str]:
+        """与DeepSeek进行对话"""
+        if not self.is_enabled():
+            return None
+        
+        try:
+            # 构建消息列表
+            messages = [
+                {"role": "system", "content": self.system_prompt}
+            ]
+            
+            # 添加聊天历史
+            history = self.get_chat_history(user_id)
+            messages.extend(history)
+            
+            # 添加当前用户消息
+            user_content = message
+            if nickname:
+                user_content = f"{nickname}: {message}"
+            messages.append({"role": "user", "content": user_content})
+            
+            # 调用API
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": self.model,
+                "messages": messages,
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "stream": False
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=self.timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if 'choices' in result and len(result['choices']) > 0:
+                    assistant_message = result['choices'][0]['message']['content'].strip()
+                    
+                    # 添加到历史记录
+                    self.add_to_history(user_id, user_content, assistant_message)
+                    
+                    return assistant_message
+                else:
+                    print(f"❌ DeepSeek API响应格式异常: {result}")
+                    return None
+            else:
+                print(f"❌ DeepSeek API调用失败: {response.status_code} - {response.text}")
+                return None
+                
+        except requests.exceptions.Timeout:
+            print(f"⏰ DeepSeek API调用超时")
+            return None
+        except requests.exceptions.RequestException as e:
+            print(f"❌ DeepSeek API请求异常: {e}")
+            return None
+        except Exception as e:
+            print(f"❌ DeepSeek聊天异常: {e}")
+            return None
+
+
 class CommandHandler:
     """命令处理器"""
     
@@ -185,6 +302,11 @@ class CommandHandler:
 /checkin - 每日签到
 /points - 查看积分
 /rank - 积分排行榜
+/clear_chat - 清除AI聊天记录
+
+🤖 AI对话:
+在群聊中@机器人可以进行智能对话
+私聊直接发送消息即可
 
 💡 输入任何文字开始智能对话！"""
     
@@ -481,6 +603,7 @@ class ChatBot:
         self.command_handler = CommandHandler(self.config, self.data_manager)
         self.game_manager = GameManager(self.config, self.data_manager)
         self.smart_reply = SmartReply(self.config)
+        self.deepseek_api = DeepSeekAPI(self.config)  # 添加DeepSeek API
         
         # Flask应用
         self.app = Flask(__name__)
@@ -538,6 +661,24 @@ class ChatBot:
         # 更新用户数据
         user_data = self.data_manager.get_user_data(user_id)
         user_data['message_count'] += 1
+        
+        # 检查是否被@，如果是则使用DeepSeek回复
+        if self.is_mentioned(data) and self.config.get('group.mention_response.use_deepseek', False):
+            clean_message = self.clean_mention_message(message)
+            deepseek_response = self.deepseek_api.chat(user_id, clean_message, nickname)
+            if deepseek_response:
+                print(f"🤖 DeepSeek回复: {deepseek_response}")
+                self.send_reply(deepseek_response, user_id, group_id, message_type)
+                self.data_manager.save_data()
+                return
+            else:
+                # DeepSeek失败时使用备用回复
+                fallback_responses = self.config.get('group.mention_response.fallback_responses', [])
+                if fallback_responses:
+                    response = random.choice(fallback_responses)
+                    self.send_reply(response, user_id, group_id, message_type)
+                    self.data_manager.save_data()
+                    return
         
         # 处理游戏输入
         game_response = self.game_manager.handle_guess_input(user_id, message)
@@ -607,8 +748,18 @@ class ChatBot:
             return self.command_handler.handle_checkin(args, user_id)
         elif command == 'points':
             return self.command_handler.handle_points(args, user_id)
+        elif command == 'clear_chat':
+            return self.handle_clear_chat(user_id)
         
         return f"❓ 未知命令: {command}\n发送 /help 查看所有可用命令"
+    
+    def handle_clear_chat(self, user_id: str) -> str:
+        """清除AI聊天记录"""
+        if self.deepseek_api.is_enabled():
+            self.deepseek_api.clear_history(user_id)
+            return "🧹 AI聊天记录已清除，开始新的对话吧！"
+        else:
+            return "⚠️ DeepSeek AI功能未启用"
     
     def get_smart_response(self, message: str, user_id: str) -> Optional[str]:
         """获取智能回复"""
@@ -642,6 +793,38 @@ class ChatBot:
             return "🎮 我有很多游戏可以玩：\n/guess - 猜数字\n/rps 石头 - 石头剪刀布\n/dice - 掷骰子\n/fortune - 抽签"
         
         return None
+    
+    def is_mentioned(self, data: Dict[str, Any]) -> bool:
+        """检查机器人是否被@"""
+        # 检查消息类型，只有群聊才需要检查@
+        if data.get('message_type') != 'group':
+            return False
+        
+        # 检查message字段中是否有at信息
+        message_data = data.get('message', [])
+        if isinstance(message_data, list):
+            for item in message_data:
+                if isinstance(item, dict) and item.get('type') == 'at':
+                    # 这里应该检查是否@的是机器人自己
+                    # 由于我们不知道机器人的QQ号，先简化为有@就响应
+                    return True
+        
+        # 也可以通过原始消息检查@符号
+        raw_message = data.get('raw_message', '')
+        if '@' in raw_message:
+            return True
+            
+        return False
+    
+    def clean_mention_message(self, message: str) -> str:
+        """清理消息中的@信息，提取纯文本"""
+        # 移除CQ码格式的@信息
+        import re
+        # 移除 [CQ:at,qq=xxxxx] 格式
+        cleaned = re.sub(r'\[CQ:at,qq=\d+\]', '', message)
+        # 移除多余的空格
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        return cleaned
     
     def send_reply(self, message: str, user_id: str, group_id: Optional[str], message_type: str):
         """发送回复"""
