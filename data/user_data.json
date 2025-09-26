@@ -1,9 +1,16 @@
 {
   "3771203015": {
-    "points": 35,
-    "last_checkin": "2025-09-22",
-    "checkin_streak": 2,
-    "message_count": 44,
+    "points": 50,
+    "last_checkin": "2025-09-26",
+    "checkin_streak": 1,
+    "message_count": 60,
     "join_date": "2025-09-21T15:09:24.164271"
+  },
+  "3089500268": {
+    "points": 0,
+    "last_checkin": null,
+    "checkin_streak": 0,
+    "message_count": 1,
+    "join_date": "2025-09-26T08:33:23.574692"
   }
 }
