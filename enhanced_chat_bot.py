@@ -406,6 +406,7 @@ class CommandHandler:
 😄 娱乐命令:
 /joke - 随机笑话
 /roll [数量] - 随机数
+/60s - 60秒读懂世界
 
 👥 群组命令:
 /checkin - 每日签到
@@ -551,6 +552,55 @@ class CommandHandler:
         
         fortune = random.choice(fortunes)
         return f"🔮 今日运势: {fortune}"
+    
+    def handle_60s(self, args: List[str]) -> str:
+        """60秒读懂世界"""
+        try:
+            # 调用60秒API
+            response = requests.get(
+                'https://60s2.chuqijerry.workers.dev/v2/60s',
+                timeout=10
+            )
+            
+            if response.status_code != 200:
+                return "❌ 获取60秒新闻失败，请稍后再试"
+            
+            data = response.json()
+            
+            if data.get('code') != 200:
+                return "❌ 60秒新闻API返回错误"
+            
+            news_data = data.get('data', {})
+            date = news_data.get('date', '未知日期')
+            tip = news_data.get('tip', '')
+            image_url = news_data.get('image', '')
+            
+            # 构建回复消息
+            if image_url:
+                # 如果有图片URL，直接返回图片
+                return f"[CQ:image,file={image_url}]"
+            else:
+                # 如果没有图片，返回文字版本
+                news_list = news_data.get('news', [])
+                if not news_list:
+                    return "❌ 今日暂无60秒新闻"
+                
+                # 构建新闻列表
+                news_text = f"📅 {date} 60秒读懂世界\n\n"
+                for i, news in enumerate(news_list[:15], 1):  # 最多显示15条
+                    news_text += f"{i}. {news}\n"
+                
+                if tip:
+                    news_text += f"\n💡 今日寄语：{tip}"
+                
+                return news_text
+                
+        except requests.exceptions.Timeout:
+            return "⏰ 获取60秒新闻超时，请稍后再试"
+        except requests.exceptions.RequestException as e:
+            return f"❌ 网络请求失败：{e}"
+        except Exception as e:
+            return f"❌ 获取60秒新闻时出错：{e}"
 
 
 class GameManager:
@@ -867,6 +917,8 @@ class ChatBot:
             return self.command_handler.handle_roll(args)
         elif command == 'fortune':
             return self.command_handler.handle_fortune(args)
+        elif command == '60s':
+            return self.command_handler.handle_60s(args)
         
         # 游戏命令
         elif command == 'guess':
@@ -998,6 +1050,10 @@ class ChatBot:
         
         if any(word in message for word in ['游戏', '玩', '娱乐']):
             return "🎮 我有很多游戏可以玩：\n/guess - 猜数字\n/rps 石头 - 石头剪刀布\n/dice - 掷骰子\n/fortune - 抽签"
+        
+        # 60秒新闻关键词检测
+        if '60s' in message_lower or '60秒' in message or '每日新闻' in message or '今日新闻' in message:
+            return self.command_handler.handle_60s([])
         
         return None
     
